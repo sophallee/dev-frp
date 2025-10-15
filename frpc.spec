@@ -1,6 +1,6 @@
 Name:           frpc
-Version:        0.60.0
-Release:        1%{?dist}
+Version:        %{version}
+Release:        %{release}%{?dist}
 Summary:        FRP Client (frpc)
 
 License:        MIT
@@ -34,5 +34,5 @@ cp README.md %{buildroot}/usr/share/doc/%{name}/
 /usr/share/doc/%{name}/README.md
 
 %changelog
-* Sun Oct 13 2025 Sophal Lee <sophal.lee@live.com> - 0.60.0-1
+* Sun Oct 13 2025 Sophal Lee <sophal.lee@live.com> - %{version}-%{release}
 - Initial frpc RPM

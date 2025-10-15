@@ -1,0 +1,13 @@
+[Unit]
+# Service name, customizable
+Description = frp server
+After = network.target syslog.target
+Wants = network.target
+
+[Service]
+Type = simple
+# Command to start frps, modify to your frps installation path
+ExecStart = /usr/local/bin/frps -c /path/to/frps.toml
+
+[Install]
+WantedBy = multi-user.target
