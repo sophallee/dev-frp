@@ -6,8 +6,17 @@ script_name=$(echo $script_file | cut -d. -f 1)
 cd $script_dir
 
 software_dir="$script_dir/software"
+properties_file="$script_dir/frp.properties"
 
-software_dir="$script_dir/software"
+# Function to load properties
+load_properties() {
+    if [ -f "$properties_file" ]; then
+        source "$properties_file"
+    else
+        echo "Error: Properties file $properties_file not found!"
+        exit 1
+    fi
+}
 
 # Function to detect OS version
 detect_os_version() {
@@ -32,6 +41,9 @@ install_frp() {
     local role=$1
     local os_version=$(detect_os_version)
     
+    # Load properties to get version info
+    load_properties
+    
     if [ "$os_version" = "unknown" ]; then
         echo "Error: Unsupported OS version. Only EL8, EL9, and EL10 are supported."
         exit 1
@@ -40,9 +52,9 @@ install_frp() {
     local package_file=""
     
     if [ "$role" = "server" ]; then
-        package_file="frps-0.60.0-1.${os_version}.x86_64.rpm"
+        package_file="frps-${frp_version}-${frp_release}.${os_version}.x86_64.rpm"
     elif [ "$role" = "client" ]; then
-        package_file="frpc-0.60.0-1.${os_version}.x86_64.rpm"
+        package_file="frpc-${frp_version}-${frp_release}.${os_version}.x86_64.rpm"
     else
         echo "Error: Invalid role. Use 'server' or 'client'"
         exit 1
@@ -55,10 +67,14 @@ install_frp() {
         echo "Available packages:"
         ls -1 "$software_dir/"*.rpm 2>/dev/null || echo "No RPM packages found"
         
+        # Provide helpful message
+        echo ""
+        echo "Note: Expected package name: $package_file"
+        echo "Current version: $frp_version, Release: $frp_release"
         exit 1
     fi
     
-    echo "Installing FRP $role for $os_version..."
+    echo "Installing FRP $role v${frp_version}-${frp_release} for $os_version..."
     
     # Check if already installed
     if [ "$role" = "server" ]; then
@@ -78,7 +94,7 @@ install_frp() {
     fi
     
     if [ $? -eq 0 ]; then
-        echo "FRP $role installed successfully!"
+        echo "FRP $role v${frp_version}-${frp_release} installed successfully!"
         
         # Show service status if available
         if [ "$role" = "server" ]; then
@@ -100,29 +116,45 @@ install_frp() {
     fi
 }
 
+# Function to show current version info
+show_version_info() {
+    if [ -f "$properties_file" ]; then
+        source "$properties_file"
+        echo "FRP Version: $frp_version"
+        echo "FRP Release: $frp_release"
+    else
+        echo "Properties file not found: $properties_file"
+    fi
+}
+
 # Function to show usage
 show_usage() {
-    echo "Usage: $0 [--install-server | --install-client | --help]"
+    echo "Usage: $0 [--install-server | --install-client | --version | --help]"
     echo ""
     echo "Options:"
     echo "  --install-server    Install FRP server"
     echo "  --install-client    Install FRP client"
+    echo "  --version          Show version information"
     echo "  --help             Show this help message"
     echo ""
     local current_os=$(detect_os_version)
     echo "Detected OS version: $current_os"
     echo "Supported OS versions: EL8, EL9, EL10"
     echo ""
-    echo "Available packages in software directory:"
-    ls -1 "$software_dir/"*.rpm 2>/dev/null || echo "No RPM packages found"
     
-    # Show expected package names for current OS
-    if [ "$current_os" != "unknown" ]; then
+    # Show version info
+    if [ -f "$properties_file" ]; then
+        source "$properties_file"
+        echo "Current FRP Version: $frp_version-$frp_release"
         echo ""
         echo "Expected package names for $current_os:"
-        echo "  Server: frps-0.60.0-1.${current_os}.x86_64.rpm"
-        echo "  Client: frpc-0.60.0-1.${current_os}.x86_64.rpm"
+        echo "  Server: frps-${frp_version}-${frp_release}.${current_os}.x86_64.rpm"
+        echo "  Client: frpc-${frp_version}-${frp_release}.${current_os}.x86_64.rpm"
+        echo ""
     fi
+    
+    echo "Available packages in software directory:"
+    ls -1 "$software_dir/"*.rpm 2>/dev/null || echo "No RPM packages found"
 }
 
 # Main script logic
@@ -132,6 +164,9 @@ case "${1:-}" in
         ;;
     --install-client)
         install_frp "client"
+        ;;
+    --version|-v)
+        show_version_info
         ;;
     --help|-h|"")
         show_usage
